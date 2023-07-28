@@ -22,7 +22,7 @@ namespace MVC4Bleems.DataAccess
             List<Products> custlist = null;
             try
             {
-                var query = random != null ? 5 : 4;
+                var query = random != "" ? 5 : 4;
                 var key = "@Query";
                 var sp = "AddEditProduct"; 
                 if(id > 0)
