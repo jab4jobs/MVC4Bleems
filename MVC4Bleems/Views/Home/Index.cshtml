@@ -1,0 +1,366 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@using MVC4Bleems.Models;
+@using MVC4Bleems.Controllers;
+<div class="container-fluid">	
+    <div class="wrapper">	
+        <h4><u>Products</u></h4>
+        <div class="btn-group">
+                <a id="createEditProductModal" data-toggle="modal" data-target="#addEditProduct" class="btn btn-primary">
+                    <i class="glyphicon glyphicon-plus"></i> Add Product
+                </a>
+               
+            </div>
+            <br />
+         <div class="row">
+             <div class="col-sm-6">
+                 <label for="exampleInputPassword1"> Filter By : </label>
+                 <table class="table table-borderless">
+                     <tbody>                        
+                         <tr>                           
+                             <td>
+                                 <select class="form-control" id="years">                                     
+                                     <option value="2023">Year 2023</option>
+                                 </select>
+                             </td>
+                             <td>
+                                 <select class="form-control" id="months" onchange="monthChange();">
+                                     <option value="0">Select Month</option>
+                                     <option value="1">January</option>
+                                      <option value="2">February</option>
+                                       <option value="3">March</option>
+                                        <option value="4">April</option>
+                                         <option value="5">May</option>
+                                          <option value="6">June</option>
+                                           <option value="7">July</option>
+                                            <option value="8">August</option>
+                                             <option value="9">September</option>
+                                              <option value="10">October</option>
+                                       <option value="11">November</option>
+                                       <option value="12">December</option>
+                                 </select>
+                             </td>
+                             <td>
+                                 <input type="date" class="form-control" id="days" onchange="dayChange();"></input>
+                             </td>
+                         </tr>
+                     </tbody>
+
+                 </table>
+             </div>
+             <div class="col-sm-6">
+                 <a id="createEditCategModal" data-toggle="modal" data-target="#addEditCateg" class="btn btn-primary" style="float:right">
+                    <i class="glyphicon glyphicon-plus"></i> Add Category
+                </a>
+             </div>            
+         </div>
+             
+       <table class=table>
+           <thead>
+               <tr>
+                   <td>Id</td>
+                   <td>Name</td>
+                   <td>Desc</td>
+                   <td>Price</td>
+                   <td>Category</td>
+                   <td>Created</td>
+                   <td>Action</td>
+               </tr>
+           </thead>
+           <tbody id="tbody"></tbody>
+       </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="addEditProduct" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Form</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="exampleInputEmail1">Name</label>
+            <input type="text" class="form-control" id="name"  placeholder="Enter name">
+          </div>
+          <div class="form-group">
+            <label for="exampleInputPassword1">Description</label>
+            <input type="text" class="form-control" id="desc" placeholder="Enter description">
+          </div>
+          <div class="form-group">
+            <label for="exampleInputPassword1">Price</label>
+            <input type="number" class="form-control" id="price" placeholder="Enter price">
+          </div>
+           <div class="form-group">
+            <label for="exampleInputPassword1">Currency</label>
+            <input type="text" class="form-control" id="currency" placeholder="Enter currency ex: KD">
+          </div>
+          <div class="form-group">
+            <label for="exampleInputPassword1">Category</label>
+            <select class="form-control" id="categories"></select>
+          </div>
+                    
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnSave" class="btn btn-primary">Save</button>
+        <button type="button" id="btnUpdate" class="btn btn-primary" style="display:none">Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="addEditCateg" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Form</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="exampleInputEmail1">Name</label>
+            <input type="text" class="form-control" id="nameCateg"  placeholder="Enter name">
+          </div>                    
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnSaveCateg" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            let dt = new Date(), m = (parseInt(dt.getMonth())) + 1;
+            m = (m < 10) ? '0' + m.toString() : m.toString();
+           getProducts('2023-01-01','2023-' + m + '-' + new Date().getDate());
+        });
+
+        
+
+        function deletePr(id) {
+                     if(confirm("Are you sure to delete this Product ? ")){
+                         $.ajax({
+                             url: 'Home/DeletePr/' + id,
+                             success: function(res) {                         
+                                 getProducts();
+                                 alert(res);
+                             },
+                             error: function () {
+                                 alert('Error Deleting Product!');
+                             }
+                         })
+                     }
+                     else return false;
+                 }
+        function getProducts(fromdate, todate) {
+             var obj = {
+                         Fromdate : fromdate,
+                         Todate : todate
+                     };
+            $.ajax({
+                url:'/Home/GetProducts',
+                type: 'POST',
+                data: obj,
+                //contentType: 'application/json,charset=utf-8',
+                dataType: 'json',
+                success: function (res) {console.log(res)
+                    let tr = '';
+                    $.each(res, (index,item) => {
+                        tr += `<tr>
+                                   <td>` + item.id + `</td>
+                                   <td>` + item.name + `</td>
+                                   <td>` + item.description + `</td>
+                                   <td>` + item.price + ` `+ item.currency +`</td>
+                                   <td>` + item.categoryName + `</td>
+                                   <td>` + item.createdAt + `</td>
+                                   <td><a href="#" id="editEmployeeModal" onclick="editForm('`+item.id +`');" data-toggle="modal" data-target="#addEditProduct" class="btn btn-info">
+                                    <i class="glyphicon glyphicon-pencil"></i> Edit
+                                </a>
+                                <a id="deleteEmployeeModal" data-toggle="modal" onclick="deletePr('`+item.id+`');" data-target="#modal-action-emplyee" class="btn btn-danger">
+                                    <i class="glyphicon glyphicon-trash"></i> Delete
+                                </a>
+                               </tr>`;
+                    });
+                    
+                    $('#tbody').html(tr);
+                },
+                error: function (err) {console.log(err)
+                    alert('Error Fetching!')
+                }
+            })
+        };
+
+        function monthChange() {
+            let val = $("#months").val()
+            val = (val < 10) ? '0' + val.toString() : val.toString();
+            let last = new Date(2023, val, 0).getDate();
+            
+            $("#days").attr('min', "2023-" + val + '-01');
+            $("#days").attr('max', "2023-" + val + '-' + last);
+            $("#days").val('');
+            if(val == '00') {
+                let dt = new Date(), m = (parseInt(dt.getMonth())) + 1;
+                m = (m < 10) ? '0' + m.toString() : m.toString();
+               getProducts('2023-01-01','2023-' + m + '-' + new Date().getDate());
+            }else {
+                getProducts("2023-" + val + '-01',"2023-" + val + '-' + last);
+            }
+        };
+        function dayChange() {
+             let val = $("#days").val();
+             getProducts(val, val);
+        }
+
+        var prId = "";
+        
+        function getCategList(selectedId) {
+            $.ajax({
+                url:'/Home/GetCategs',
+                type: 'GET',
+                contentType: 'application/json,charset=utf-8',
+                dataType: 'json',
+                success: function (res) {
+                    if(res.length) {
+                    let op = '',sVal = '';
+                    $.each(res, (index,item) => { 
+                        op += `<option value="${item.id}">${item.name}</option>`;
+                       
+                    })
+                     $('#categories').html(op);
+                     $('#categories').val(selectedId).change();
+               }
+               },
+               error: function () {
+                   alert('Error Fetching Categs!')
+               }
+               })                
+        }
+
+        function editForm(id) {
+                prId = id;
+                 $.ajax({
+                    url:'/Home/GetProductDetailsById/' + id,
+                    type: 'GET',
+                    contentType: 'application/json,charset=utf-8',
+                    dataType: 'json',
+                    success: function (res) {
+                       console.log(res);
+                       if(res.length) {
+                           $("#exampleModalLabel").html('Edit Product');
+                           $("#btnSave").hide();
+                           $("#btnUpdate").show();
+                           $("#name").val(res[0].name);
+                           $("#desc").val(res[0].description);
+                           $("#price").val(res[0].price);
+                           $("#currency").val(res[0].currency);
+
+                           let categId = res[0].categoryId;
+                            getCategList(categId);
+                                
+                       }
+                       $("#addEditProduct").modal('show');
+                    },
+                    error: function () {
+                        alert('Error Fetching Products!')
+                    }
+                });
+
+                function clearForm () {
+                     
+                           
+                           $("#name").val('');
+                           $("#desc").val('');
+                           $("#price").val('');
+                           $("#currency").val('');
+
+                };
+
+                $("#createEditProductModal").click(function(){
+                    clearForm();
+                    $("#btnUpdate").hide();
+                    $("#btnSave").show();
+                    $("#exampleModalLabel").html('Add Product');
+                    $("#addEditProduct").modal('show');
+                });
+                $("#createEditCategModal").click(function(){
+                    $("#exampleModalLabel").html('Add Category');
+                    $("#addEditCateg").modal('show');
+                });
+                
+
+                function addEditPr(id) {
+                     var obj = {
+                         Name : $("#name").val(),
+                         Description : $("#desc").val(),
+                         Price : $("#price").val(),
+                         Currency : $("#currency").val(),
+                         categoryId : $("#categories option:selected").val()
+                     };
+                     if(id) obj.Id = id;
+                     $.ajax({
+                            url:'/Home/AddEditProduct',
+                            type: 'POST',
+                            data: obj,
+                            //contentType: 'application/w-www-form-urlencoded; charset=UTF-8',
+                            dataType: 'json',
+                            cache: false,
+                            success: function (res) {                      
+                               $("#addEditProduct").modal('hide');
+                               getProducts();
+                            },
+                            error: function () {
+                                alert('Error Saving Product!')
+                            }
+                        })
+                 };
+
+                 function addEditCateg(id) {
+                     var obj = {
+                         Name : $("#nameCateg").val(),
+                     };
+                     if(id) obj.Id = id;
+                     $.ajax({
+                            url:'/Home/AddEditCateg',
+                            type: 'POST',
+                            data: obj,
+                            //contentType: 'application/w-www-form-urlencoded; charset=UTF-8',
+                            dataType: 'json',
+                            cache: false,
+                            success: function (res) {     
+                                alert(res);
+                               $("#addEditCateg").modal('hide');                               
+                            },
+                            error: function () {
+                                alert('Error Saving Product!')
+                            }
+                        })
+                 };
+                  $("#btnSave").click(function(){
+                     addEditPr();
+                 });
+                 $("#btnUpdate").click(function(){
+                     addEditPr(prId);
+                 });
+                 $("#btnSaveCateg").click(function(){
+                     addEditCateg();
+                 });
+                 
+
+         };
+    </script>
+}
